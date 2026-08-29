@@ -144,19 +144,13 @@ side values: "bilateral" | "right then left" | "left then right"
 duration values: "30 sec" | "45 sec" | "60 sec" | "12 reps"`;
 
     try {
-      const res = await fetch("https://api.anthropic.com/v1/messages", {
+      const res = await fetch("/api/plan", {
         method: "POST",
-        headers: { "Content-Type": "application/json", "x-api-key": import.meta.env.VITE_ANTHROPIC_API_KEY, "anthropic-version": "2023-06-01", "anthropic-dangerous-direct-browser-access": "true" },
-        body: JSON.stringify({
-          model: "claude-sonnet-4-20250514",
-          max_tokens: 4000,
-          messages: [{ role: "user", content: prompt }],
-        }),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt }),
       });
-      const data = await res.json();
-      const raw = data.content.map(i => i.text || "").join("");
-      const clean = raw.replace(/```json\s*/g, "").replace(/```\s*/g, "").trim();
-      const parsed = JSON.parse(clean);
+      const parsed = await res.json();
+      if (parsed.error) throw new Error(parsed.error);
       setSchedule(parsed);
       setActiveDay(0);
       setStep("results");
