@@ -41,7 +41,19 @@ export default async function handler(req, res) {
       }),
     });
 
-    const data = await response.json();
+     const data = await response.json();
+
+    if (!response.ok) {
+      const msg = data.error?.message || '';
+      console.error('Anthropic API error', response.status, msg);
+      if (/credit|spend|billing|usage limit/i.test(msg)) {
+        return res.status(503).json({ error: 'Class Architect has reached its usage limit for now. Please check back soon.' });
+      }
+      if (response.status === 429 || response.status === 529) {
+        return res.status(503).json({ error: 'Class Architect is busy right now. Please try again in a minute.' });
+      }
+      return res.status(500).json({ error: 'Something went wrong on our end. Please try again.' });
+    }
 
     if (!data.content || !Array.isArray(data.content)) {
       return res.status(500).json({ error: data.error?.message || 'Unexpected API response' });
@@ -72,6 +84,7 @@ export default async function handler(req, res) {
 
     res.status(200).json(parsed);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error(err);
+    res.status(500).json({ error: 'Something went wrong on our end. Please try again.' });
   }
 }
